@@ -1,3 +1,5 @@
+pub mod dispatcher;
+
 #[cfg(test)]
 mod tests {
     #[test]
