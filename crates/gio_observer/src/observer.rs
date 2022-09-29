@@ -1,3 +1,4 @@
-pub trait Observer<T> {
-    fn update(&self, message: T);
+pub trait Observer {
+    type Item;
+    fn update(&self, event: Self::Item);
 }

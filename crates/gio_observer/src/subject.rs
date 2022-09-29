@@ -1,5 +1,7 @@
-pub trait Subject<'a, T: crate::observer::Observer<T>> {
-    fn attach(&mut self, observer: &'a T);
-    fn detach(&mut self, observer: &'a T);
+use crate::observer::Observer;
+
+pub trait Subject<'a, T> {
+    fn attach(&mut self, observer: &'a dyn Observer<Item = T>);
+    fn detach(&mut self, observer: &'a dyn Observer<Item = T>);
     fn notify_observers(&self);
 }

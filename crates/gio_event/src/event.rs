@@ -31,7 +31,8 @@
 // MouseButtonReleased,    //!< A mouse button was released (data in event.mouseButton)
 // MouseMoved,             //!< The mouse cursor moved (data in event.mouseMove)
 
-enum Event {
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum Event {
     None,
     ClosedEvent,
     ResizedEvent { width: i32, height: i32 },
@@ -44,4 +45,51 @@ enum Event {
     KeyPressedRepeatingEvent { keycode: usize, mods: usize },
     MouseWheelHScrolledEvent { x: u16, y: u16, delta: f64 },
     MouseButtonReleasedEvent { button: usize, x: u16, y: u16 },
+}
+
+pub trait EventSubscriber {
+    fn on_event(&self, event: Event);
+    fn get_id(&self) -> usize;
+}
+
+pub struct EventPublisher<'a> {
+    event: Event,
+    event_subscribers: Vec<&'a dyn EventSubscriber>,
+}
+
+impl<'a> EventPublisher<'a> {
+    pub fn new(event: Event) -> Self {
+        Self {
+            event,
+            event_subscribers: Vec::new(),
+        }
+    }
+
+    pub fn set_event(&mut self, e: Event) {
+        self.event = e;
+    }
+
+    pub fn event(&self) -> &Event {
+        &self.event
+    }
+
+    pub fn event_subscribers(&self) -> &Vec<&'a dyn EventSubscriber> {
+        &self.event_subscribers
+    }
+
+    pub fn attach(&mut self, event_subscriber: &'a dyn EventSubscriber) -> &mut Self {
+        self.event_subscribers.push(event_subscriber);
+        self
+    }
+    pub fn detach(&mut self, event_subscriber: &'a dyn EventSubscriber) -> &mut Self {
+        self.event_subscribers
+            .retain(|&x| x.get_id() != event_subscriber.get_id());
+        self
+    }
+
+    pub fn notify_subscribers(&self) {
+        self.event_subscribers.iter().for_each(|&e| {
+            e.on_event(self.event);
+        });
+    }
 }
