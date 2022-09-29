@@ -1,0 +1,31 @@
+[package]
+name = "gio_platform"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4.17"
+env_logger = "0.9.0"
+gio_event = {path = "../gio_event"}
+
+[target.'cfg(target_os = "linux")'.dependencies]
+xcb = "1.1.1"
+x11 = "2.19.1"
+
+
+
+[target.'cfg(target_os = "windows")'.dependencies.windows-sys]
+version = "0.42.0"
+features = [
+    "Win32_Security",
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_System_Threading",
+    "Win32_System_Performance",
+    "Win32_System_LibraryLoader",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_System_WindowsProgramming"
+]
