@@ -6,7 +6,7 @@ use lazy_static::lazy_static;
 use std::sync::{Arc, Mutex};
 
 lazy_static! {
-    static ref INPUT: Arc<Mutex<Input>> = Arc::new(Mutex::new(Input::new()));
+    static ref INPUT: Arc<Mutex<Input<'static>>> = Arc::new(Mutex::new(Input::new()));
 }
 
 #[cfg(target_os = "linux")]

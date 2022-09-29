@@ -228,7 +228,7 @@ impl Window {
                             .pressed
                             .set_event(Event::KeyPressedEvent { keycode: key, mods });
 
-                        //DISPATCHER.lock().unwrap().push(&input.keyboard.pressed);
+                        DISPATCHER.lock().unwrap().push(&input.keyboard.pressed);
                         // for e in &self.input.borrow().keyboard.owners_pressed {
                         //     let item = event::InputEventItem {
                         //         owner: e.clone(),

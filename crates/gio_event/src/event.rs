@@ -31,6 +31,8 @@
 // MouseButtonReleased,    //!< A mouse button was released (data in event.mouseButton)
 // MouseMoved,             //!< The mouse cursor moved (data in event.mouseMove)
 
+use crate::DISPATCHER;
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Event {
     None,

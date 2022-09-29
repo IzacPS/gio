@@ -1,11 +1,11 @@
 use gio_event::event::{Event, EventPublisher, EventSubscriber};
 
-pub struct KeyboardKey {
-    pub pressed: EventPublisher<'static>,
-    pub released: EventPublisher<'static>,
+pub struct KeyboardKey<'a> {
+    pub pressed: EventPublisher<'a>,
+    pub released: EventPublisher<'a>,
 }
 
-impl KeyboardKey {
+impl<'a> KeyboardKey<'a> {
     pub fn new() -> Self {
         Self {
             pressed: EventPublisher::new(Event::None),
@@ -14,15 +14,15 @@ impl KeyboardKey {
     }
 }
 
-type MouseButton = KeyboardKey;
+type MouseButton<'a> = KeyboardKey<'a>;
 
-pub struct Mouse {
-    pub buttons: MouseButton,
-    pub wheel: EventPublisher<'static>,
-    pub movement: EventPublisher<'static>,
+pub struct Mouse<'a> {
+    pub buttons: MouseButton<'a>,
+    pub wheel: EventPublisher<'a>,
+    pub movement: EventPublisher<'a>,
 }
 
-impl Mouse {
+impl<'a> Mouse<'a> {
     pub fn new() -> Self {
         Self {
             buttons: MouseButton::new(),
@@ -32,12 +32,12 @@ impl Mouse {
     }
 }
 
-pub struct Input {
-    pub keyboard: KeyboardKey,
-    pub mouse: Mouse,
+pub struct Input<'a> {
+    pub keyboard: KeyboardKey<'a>,
+    pub mouse: Mouse<'a>,
 }
 
-impl Input {
+impl<'a> Input<'a> {
     pub fn new() -> Self {
         Self {
             keyboard: KeyboardKey::new(),
@@ -47,7 +47,7 @@ impl Input {
 
     pub fn bind_key_pressed_event(
         &mut self,
-        subscriber: &'static (dyn EventSubscriber + Sync),
+        subscriber: &'a (dyn EventSubscriber + Sync),
     ) -> &mut Self {
         self.keyboard.pressed.attach(subscriber);
         self
@@ -55,7 +55,7 @@ impl Input {
 
     pub fn bind_key_released_event(
         &mut self,
-        subscriber: &'static (dyn EventSubscriber + Sync),
+        subscriber: &'a (dyn EventSubscriber + Sync),
     ) -> &mut Self {
         self.keyboard.released.attach(subscriber);
         self
@@ -63,7 +63,7 @@ impl Input {
 
     pub fn bind_mouse_button_pressed_event(
         &mut self,
-        subscriber: &'static (dyn EventSubscriber + Sync),
+        subscriber: &'a (dyn EventSubscriber + Sync),
     ) -> &mut Self {
         self.mouse.buttons.pressed.attach(subscriber);
         self
@@ -71,7 +71,7 @@ impl Input {
 
     pub fn bind_mouse_button_released_event(
         &mut self,
-        subscriber: &'static (dyn EventSubscriber + Sync),
+        subscriber: &'a (dyn EventSubscriber + Sync),
     ) -> &mut Self {
         self.mouse.buttons.released.attach(subscriber);
         self
@@ -79,7 +79,7 @@ impl Input {
 
     pub fn bind_mouse_scroll_event(
         &mut self,
-        subscriber: &'static (dyn EventSubscriber + Sync),
+        subscriber: &'a (dyn EventSubscriber + Sync),
     ) -> &mut Self {
         self.mouse.wheel.attach(subscriber);
         self
@@ -87,7 +87,7 @@ impl Input {
 
     pub fn bind_mouse_movement_event(
         &mut self,
-        subscriber: &'static (dyn EventSubscriber + Sync),
+        subscriber: &'a (dyn EventSubscriber + Sync),
     ) -> &mut Self {
         self.mouse.movement.attach(subscriber);
         self
