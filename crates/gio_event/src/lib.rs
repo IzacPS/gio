@@ -1,6 +1,17 @@
 pub mod dispatcher;
 pub mod event;
 
+use std::sync::{Arc, Mutex};
+
+use lazy_static::lazy_static;
+
+use crate::dispatcher::EventDispatcher;
+
+lazy_static! {
+    pub static ref DISPATCHER: Arc<Mutex<EventDispatcher<'static>>> =
+        Arc::new(Mutex::new(EventDispatcher::new()));
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{

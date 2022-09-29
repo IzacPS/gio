@@ -1,9 +1,9 @@
+use gio_event::{event::Event, DISPATCHER};
 use std::ptr;
-
-use crate::input::Input;
-use gio_event::{dispatcher::EventDispatcher, event::Event};
 use x11_dl::xlib::{self, Button4, Button5, Display};
 use xcb::{x, Xid, XidNew};
+
+use crate::INPUT;
 
 use super::{
     input::{get_key_from_keysym, get_mouse_button},
@@ -48,19 +48,20 @@ impl WindowInterface {
     }
 }
 
-pub struct Window<'a> {
+pub struct Window {
     window_interface: WindowInterface,
-    pub input: &'a mut Input,
-    pub event_dispatcher: &'a mut EventDispatcher<'a>,
+    // pub input: &'a mut Input,
+    // pub event_dispatcher: &'a mut EventDispatcher<'a>,
     pub has_requested_to_close: bool,
 }
 
-impl<'a> Window<'a> {
-    pub fn new(input: &'a mut Input, event_dispatcher: &'a mut EventDispatcher<'a>) -> Self {
+impl Window {
+    pub fn new() -> Self {
+        // pub fn new(input: &'a mut Input, event_dispatcher: &'a mut EventDispatcher<'a>) -> Self {
         Self {
             window_interface: WindowInterface::new(),
-            input,
-            event_dispatcher,
+            // input,
+            // event_dispatcher,
             has_requested_to_close: false,
         }
     }
@@ -207,7 +208,7 @@ impl<'a> Window<'a> {
         Ok(())
     }
 
-    pub fn poll_events(&'a mut self) {
+    pub fn poll_events(&mut self) {
         if let Some(conn) = &self.window_interface().connection {
             if let Some(ev) = conn.wait_for_event().ok() {
                 match ev {
@@ -221,11 +222,13 @@ impl<'a> Window<'a> {
                             ))
                         };
                         let mods = get_mods(event.state());
-                        self.input
+                        let mut input = INPUT.lock().unwrap();
+                        input
                             .keyboard
                             .pressed
                             .set_event(Event::KeyPressedEvent { keycode: key, mods });
-                        self.event_dispatcher.push(&self.input.keyboard.pressed);
+
+                        //DISPATCHER.lock().unwrap().push(&input.keyboard.pressed);
                         // for e in &self.input.borrow().keyboard.owners_pressed {
                         //     let item = event::InputEventItem {
                         //         owner: e.clone(),
@@ -244,11 +247,12 @@ impl<'a> Window<'a> {
                             ))
                         };
                         let mods = get_mods(event.state());
-                        self.input
+                        let mut input = INPUT.lock().unwrap();
+                        input
                             .keyboard
                             .released
                             .set_event(Event::KeyReleasedEvent { keycode: key });
-                        self.event_dispatcher.push(&self.input.keyboard.released);
+                        DISPATCHER.lock().unwrap().push(&input.keyboard.released);
                         // for e in &self.input.borrow().keyboard.owners_released {
                         //     let item = event::InputEventItem {
                         //         owner: e.clone(),
@@ -296,15 +300,20 @@ impl<'a> Window<'a> {
                     }
                     xcb::Event::X(x::Event::ButtonPress(event)) => {
                         let button = get_mouse_button(event.detail() as u32);
-                        self.input.mouse.buttons.pressed.set_event(
-                            Event::MouseButtonPressedEvent {
+                        let input = INPUT.lock().unwrap();
+                        input
+                            .mouse
+                            .buttons
+                            .pressed
+                            .set_event(Event::MouseButtonPressedEvent {
                                 button,
                                 x: event.event_x() as u16,
                                 y: event.event_y() as u16,
-                            },
-                        );
-                        self.event_dispatcher
-                            .push(&self.input.mouse.buttons.pressed);
+                            });
+                        DISPATCHER
+                            .lock()
+                            .unwrap()
+                            .push(&input.mouse.buttons.pressed);
                         // for e in &self.input.borrow().mouse.buttons.owners_pressed {
                         //     let item = event::InputEventItem {
                         //         owner: e.clone(),
@@ -325,15 +334,13 @@ impl<'a> Window<'a> {
                             } else {
                                 -1.0
                             };
-                            self.input
-                                .mouse
-                                .wheel
-                                .set_event(Event::MouseWheelScrolledEvent {
-                                    x: event.event_x() as u16,
-                                    y: event.event_y() as u16,
-                                    delta,
-                                });
-                            self.event_dispatcher.push(&self.input.mouse.wheel);
+                            let input = INPUT.lock().unwrap();
+                            input.mouse.wheel.set_event(Event::MouseWheelScrolledEvent {
+                                x: event.event_x() as u16,
+                                y: event.event_y() as u16,
+                                delta,
+                            });
+                            DISPATCHER.lock().unwrap().push(&input.mouse.wheel);
                             // for e in &self.input.borrow().mouse.wheel {
                             //     let item = event::InputEventItem {
                             //         owner: e.clone(),
@@ -352,7 +359,8 @@ impl<'a> Window<'a> {
                                 -1.0
                             };
                             //TODO: this is horiontal mouse wheel movement
-                            self.input
+                            let input = INPUT.lock().unwrap();
+                            input
                                 .mouse
                                 .wheel
                                 .set_event(Event::MouseWheelHScrolledEvent {
@@ -360,7 +368,7 @@ impl<'a> Window<'a> {
                                     y: event.event_y() as u16,
                                     delta,
                                 });
-                            self.event_dispatcher.push(&self.input.mouse.wheel);
+                            DISPATCHER.lock().unwrap().push(&input.mouse.wheel);
                             // for e in &self.input.borrow().mouse.wheel {
                             //     let item = event::InputEventItem {
                             //         owner: e.clone(),
@@ -372,15 +380,18 @@ impl<'a> Window<'a> {
                             //     };
                             // }
                         } else {
-                            self.input.mouse.buttons.released.set_event(
+                            let input = INPUT.lock().unwrap();
+                            input.mouse.buttons.released.set_event(
                                 Event::MouseButtonReleasedEvent {
                                     button,
                                     x: event.event_x() as u16,
                                     y: event.event_y() as u16,
                                 },
                             );
-                            self.event_dispatcher
-                                .push(&self.input.mouse.buttons.released);
+                            DISPATCHER
+                                .lock()
+                                .unwrap()
+                                .push(&input.mouse.buttons.released);
                             // for e in &self.input.borrow().mouse.buttons.owners_released {
                             //     let item = event::InputEventItem {
                             //         owner: e.clone(),
@@ -395,11 +406,12 @@ impl<'a> Window<'a> {
                         }
                     }
                     xcb::Event::X(x::Event::MotionNotify(event)) => {
-                        self.input.mouse.movement.set_event(Event::MouseMovedEvent {
+                        let input = INPUT.lock().unwrap();
+                        input.mouse.movement.set_event(Event::MouseMovedEvent {
                             x: event.event_x() as u16,
                             y: event.event_y() as u16,
                         });
-                        self.event_dispatcher.push(&self.input.mouse.movement);
+                        DISPATCHER.lock().unwrap().push(&input.mouse.movement);
                         // for e in &self.input.borrow().mouse.movement {
                         //     let item = event::InputEventItem {
                         //         owner: e.clone(),

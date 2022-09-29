@@ -54,7 +54,7 @@ pub trait EventSubscriber {
 
 pub struct EventPublisher<'a> {
     event: Event,
-    event_subscribers: Vec<&'a dyn EventSubscriber>,
+    event_subscribers: Vec<&'a (dyn EventSubscriber + Sync)>,
 }
 
 impl<'a> EventPublisher<'a> {
@@ -73,15 +73,15 @@ impl<'a> EventPublisher<'a> {
         &self.event
     }
 
-    pub fn event_subscribers(&self) -> &Vec<&'a dyn EventSubscriber> {
+    pub fn event_subscribers(&self) -> &Vec<&'a (dyn EventSubscriber + Sync)> {
         &self.event_subscribers
     }
 
-    pub fn attach(&mut self, event_subscriber: &'a dyn EventSubscriber) -> &mut Self {
+    pub fn attach(&mut self, event_subscriber: &'a (dyn EventSubscriber + Sync)) -> &mut Self {
         self.event_subscribers.push(event_subscriber);
         self
     }
-    pub fn detach(&mut self, event_subscriber: &'a dyn EventSubscriber) -> &mut Self {
+    pub fn detach(&mut self, event_subscriber: &'a (dyn EventSubscriber + Sync)) -> &mut Self {
         self.event_subscribers
             .retain(|&x| x.get_id() != event_subscriber.get_id());
         self

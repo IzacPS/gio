@@ -47,7 +47,7 @@ impl Input {
 
     pub fn bind_key_pressed_event(
         &mut self,
-        subscriber: &'static dyn EventSubscriber,
+        subscriber: &'static (dyn EventSubscriber + Sync),
     ) -> &mut Self {
         self.keyboard.pressed.attach(subscriber);
         self
@@ -55,7 +55,7 @@ impl Input {
 
     pub fn bind_key_released_event(
         &mut self,
-        subscriber: &'static dyn EventSubscriber,
+        subscriber: &'static (dyn EventSubscriber + Sync),
     ) -> &mut Self {
         self.keyboard.released.attach(subscriber);
         self
@@ -63,7 +63,7 @@ impl Input {
 
     pub fn bind_mouse_button_pressed_event(
         &mut self,
-        subscriber: &'static dyn EventSubscriber,
+        subscriber: &'static (dyn EventSubscriber + Sync),
     ) -> &mut Self {
         self.mouse.buttons.pressed.attach(subscriber);
         self
@@ -71,7 +71,7 @@ impl Input {
 
     pub fn bind_mouse_button_released_event(
         &mut self,
-        subscriber: &'static dyn EventSubscriber,
+        subscriber: &'static (dyn EventSubscriber + Sync),
     ) -> &mut Self {
         self.mouse.buttons.released.attach(subscriber);
         self
@@ -79,7 +79,7 @@ impl Input {
 
     pub fn bind_mouse_scroll_event(
         &mut self,
-        subscriber: &'static dyn EventSubscriber,
+        subscriber: &'static (dyn EventSubscriber + Sync),
     ) -> &mut Self {
         self.mouse.wheel.attach(subscriber);
         self
@@ -87,7 +87,7 @@ impl Input {
 
     pub fn bind_mouse_movement_event(
         &mut self,
-        subscriber: &'static dyn EventSubscriber,
+        subscriber: &'static (dyn EventSubscriber + Sync),
     ) -> &mut Self {
         self.mouse.movement.attach(subscriber);
         self
