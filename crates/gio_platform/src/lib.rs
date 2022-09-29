@@ -1,16 +1,17 @@
-pub mod win32;
+pub mod common;
+pub mod input;
 
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg(target_os = "linux")]
+pub mod window {
+    pub type Window<'a> = super::linux::window::Window<'a>;
+    pub type WindowInterface = super::linux::window::WindowInterface;
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+    fn test_create_window() {}
 }
