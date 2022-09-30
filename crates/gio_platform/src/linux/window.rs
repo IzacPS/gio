@@ -79,27 +79,11 @@ impl Window {
         width: i32,
         height: i32,
     ) -> xcb::Result<()> {
-        //let xlib = xlib::Xlib::open().unwrap();
-
         self.display = unsafe { (self.xlib.XOpenDisplay)(ptr::null()) };
-        //self.window_interface.display = unsafe { XOpenDisplay(std::ptr::null()) };
-        //unsafe{XAutoRepeatOff(self.window_interface.display)};
 
-        //self.window_interface.connection = unsafe{ XGetXCBConnection(self.window_interface.display)};
-        //TODO: check if connection has erros
-        //if (xcb_connection_has_error(state_ptr->connection))
-        //let setup = unsafe{xcb_get_setup(self.window_interface.connection)};
-        //let it : xcb_screen_iterator_t;
-        // Connect to the X server.
         let (conn, screen_num) = xcb::Connection::connect(None)?;
         self.screen = screen_num as usize;
-        //self.window_interface.connection.get_setup();
-        // Fetch the `x::Setup` and get the main `x::Screen` object.
         let screen = conn.get_setup().roots().nth(screen_num as usize).unwrap();
-        //self.window_interface.screen = screen;
-
-        // Generate an `Xid` for the client window.
-        // The type inference is needed here.
         self.platform_interface_mut().handle = conn.generate_id();
 
         // We can now create a window. For this we pass a `Request`
@@ -140,7 +124,7 @@ impl Window {
             window: self.platform_interface_mut().handle,
             property: x::ATOM_WM_NAME,
             r#type: x::ATOM_STRING,
-            data: app_name.as_bytes(), //b"My XCB Window",
+            data: app_name.as_bytes(),
         });
         // And check for success again
         conn.check_request(cookie)?;
@@ -200,16 +184,30 @@ impl Window {
         // Otherwise, here is how to perform a connection flush.
         conn.flush()?;
 
-        //let mut maximized = false;
         self.platform_interface_mut().instance = Some(conn);
-
         Ok(())
     }
 
     pub fn poll_events(&mut self) {
         if let Some(conn) = &self.platform_interface().instance {
-            if let Some(ev) = conn.wait_for_event().ok() {
-                match ev {
+            loop {
+                let event = match conn.wait_for_event() {
+                    Err(xcb::Error::Connection(err)) => {
+                        panic!("unexpected I/O error: {}", err);
+                    }
+                    Err(xcb::Error::Protocol(xcb::ProtocolError::X(
+                        x::Error::Font(err),
+                        _req_name,
+                    ))) => {
+                        // may be this particular error is fine?
+                        continue;
+                    }
+                    Err(xcb::Error::Protocol(err)) => {
+                        panic!("unexpected protocol error: {:#?}", err);
+                    }
+                    Ok(event) => event,
+                };
+                match event {
                     xcb::Event::X(x::Event::KeyPress(event)) => {
                         let key = unsafe {
                             get_key_from_keysym((self.xlib.XkbKeycodeToKeysym)(
@@ -220,7 +218,6 @@ impl Window {
                             ))
                         };
                         let mods = get_mods(event.state());
-                        // let mut input = GIO_INPUT.lock().unwrap();
                         {
                             self.input
                                 .lock()
@@ -240,8 +237,6 @@ impl Window {
                             ))
                         };
                         let mods = get_mods(event.state());
-                        // let mut input = GIO_INPUT.lock().unwrap();
-
                         {
                             self.input
                                 .lock()
@@ -250,13 +245,6 @@ impl Window {
                                 .set_press_state(key, false)
                                 .set_mods(mods);
                         }
-                        // for e in &self.input.borrow().keyboard.owners_released {
-                        //     let item = event::InputEventItem {
-                        //         owner: e.clone(),
-                        //         event_type: InputEventType::KeyReleasedEvent { keycode: key },
-                        //     };
-                        //     self.event_system.borrow_mut().push_input_event(item);
-                        // }
                         // if event.detail() == 0x3a {
                         //     // The M key was pressed
                         //     // (M only on qwerty keyboards. Keymap support is done
@@ -297,7 +285,6 @@ impl Window {
                     }
                     xcb::Event::X(x::Event::ButtonPress(event)) => {
                         let button = get_mouse_button(event.detail() as u32);
-                        // let mut input = GIO_INPUT.lock().unwrap();
                         {
                             self.input
                                 .lock()
@@ -306,27 +293,6 @@ impl Window {
                                 .set_position(event.event_x() as u32, event.event_y() as u32)
                                 .set_press_state(button, true);
                         }
-
-                        // self.input.mouse.buttons.pressed.set_event(
-                        //     Event::MouseButtonPressedEvent {
-                        //         button,
-                        //         x: event.event_x() as u16,
-                        //         y: event.event_y() as u16,
-                        //     },
-                        // );
-                        // self.event_dispatcher
-                        //     .push(&self.input.mouse.buttons.pressed);
-                        // for e in &self.input.borrow().mouse.buttons.owners_pressed {
-                        //     let item = event::InputEventItem {
-                        //         owner: e.clone(),
-                        //         event_type: InputEventType::MouseButtonPressedEvent {
-                        //             button,
-                        //             x: event.event_x() as u16,
-                        //             y: event.event_y() as u16,
-                        //         },
-                        //     };
-                        //     self.event_system.borrow_mut().push_input_event(item);
-                        // }
                     }
                     xcb::Event::X(x::Event::ButtonRelease(event)) => {
                         let button = get_mouse_button(event.detail() as u32);
@@ -336,7 +302,6 @@ impl Window {
                             } else {
                                 -1.0
                             };
-                            // let mut input = GIO_INPUT.lock().unwrap();
 
                             {
                                 self.input
@@ -346,25 +311,12 @@ impl Window {
                                     .set_position(event.event_x() as u32, event.event_y() as u32)
                                     .set_scroll_delta(delta);
                             }
-                            // for e in &self.input.borrow().mouse.wheel {
-                            //     let item = event::InputEventItem {
-                            //         owner: e.clone(),
-                            //         event_type: InputEventType::MouseWheelScrolledEvent {
-                            //             x: event.event_x() as u16,
-                            //             y: event.event_y() as u16,
-                            //             delta,
-                            //         },
-                            //     };
-                            //     self.event_system.borrow_mut().push_input_event(item);
-                            // }
                         } else if button == 6 || button == 7 {
                             let delta = if button == Button4 as usize {
                                 1.0
                             } else {
                                 -1.0
                             };
-                            //TODO: this is horiontal mouse wheel movement
-                            // let mut input = GIO_INPUT.lock().unwrap();
                             {
                                 self.input
                                     .lock()
@@ -373,18 +325,7 @@ impl Window {
                                     .set_position(event.event_x() as u32, event.event_y() as u32)
                                     .set_scroll_delta(delta);
                             }
-                            // for e in &self.input.borrow().mouse.wheel {
-                            //     let item = event::InputEventItem {
-                            //         owner: e.clone(),
-                            //         event_type: InputEventType::MouseWheelHScrolledEvent {
-                            //             x: event.event_x() as u16,
-                            //             y: event.event_y() as u16,
-                            //             delta,
-                            //         },
-                            //     };
-                            // }
                         } else {
-                            // let mut input = GIO_INPUT.lock().unwrap();
                             {
                                 self.input
                                     .lock()
@@ -393,52 +334,14 @@ impl Window {
                                     .set_position(event.event_x() as u32, event.event_y() as u32)
                                     .set_press_state(button, false);
                             }
-                            // self.input.mouse.buttons.released.set_event(
-                            //     Event::MouseButtonReleasedEvent {
-                            //         button,
-                            //         x: event.event_x() as u16,
-                            //         y: event.event_y() as u16,
-                            //     },
-                            // );
-                            // self.event_dispatcher
-                            //     .push(&self.input.mouse.buttons.released);
-                            // for e in &self.input.borrow().mouse.buttons.owners_released {
-                            //     let item = event::InputEventItem {
-                            //         owner: e.clone(),
-                            //         event_type: InputEventType::MouseButtonReleasedEvent {
-                            //             button,
-                            //             x: event.event_x() as u16,
-                            //             y: event.event_y() as u16,
-                            //         },
-                            //     };
-                            //     self.event_system.borrow_mut().push_input_event(item);
-                            // }
                         }
                     }
                     xcb::Event::X(x::Event::MotionNotify(event)) => {
-                        // let mut input = GIO_INPUT.lock().unwrap();
-                        {
-                            self.input
-                                .lock()
-                                .unwrap()
-                                .mouse_mut()
-                                .set_position(event.event_x() as u32, event.event_y() as u32);
-                        }
-                        // self.input.mouse.movement.set_event(Event::MouseMovedEvent {
-                        //     x: event.event_x() as u16,
-                        //     y: event.event_y() as u16,
-                        // });
-                        // self.event_dispatcher.push(&self.input.mouse.movement);
-                        // for e in &self.input.borrow().mouse.movement {
-                        //     let item = event::InputEventItem {
-                        //         owner: e.clone(),
-                        //         event_type: InputEventType::MouseMovedEvent {
-                        //             x: event.event_x() as u16,
-                        //             y: event.event_y() as u16,
-                        //         },
-                        //     };
-                        //     self.event_system.borrow_mut().push_input_event(item);
-                        // }
+                        self.input
+                            .lock()
+                            .unwrap()
+                            .mouse_mut()
+                            .set_position(event.event_x() as u32, event.event_y() as u32);
                     }
                     xcb::Event::X(x::Event::ConfigureNotify(event)) => {}
                     xcb::Event::X(x::Event::ClientMessage(ev)) => {
@@ -452,7 +355,7 @@ impl Window {
                             }
                         }
                     }
-                    _ => {}
+                    _ => break,
                 }
             }
         }

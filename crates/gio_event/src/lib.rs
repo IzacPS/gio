@@ -1,5 +1,7 @@
-pub mod observer;
-pub mod subject;
+mod listener;
+mod publisher;
+
+pub struct Event<T> {}
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right

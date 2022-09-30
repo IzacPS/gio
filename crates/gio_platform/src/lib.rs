@@ -10,7 +10,6 @@ mod linux;
 #[cfg(target_os = "linux")]
 pub mod window {
     pub type Window = super::linux::window::Window;
-    //    pub type WindowInterface = super::linux::window::WindowInterface;
 }
 
 #[cfg(target_os = "windows")]
@@ -18,7 +17,6 @@ mod win32;
 #[cfg(target_os = "windows")]
 pub mod window {
     pub type Window = super::win32::window::Window;
-    pub type WindowInterface = super::win32::window::WindowInterface;
 }
 
 pub struct Platform {
