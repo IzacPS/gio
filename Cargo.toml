@@ -1,9 +1,9 @@
 [workspace]
 
 members = [
-    "crates/gio_event",
+    #"crates/gio_event",
     #"crates/gio_observer",
     "crates/gio_platform",
     "crates/gio_run_test",
-    "crates/gio_input"
+    "crates/gio_input",
 ]

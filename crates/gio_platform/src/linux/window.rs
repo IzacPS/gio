@@ -1,10 +1,14 @@
-use std::{ptr, sync::Arc};
+use std::{
+    ptr,
+    sync::{Arc, Mutex},
+};
 
-use gio_input::GIO_INPUT;
+use gio_input::Input;
+// use gio_input::{Input, GIO_INPUT};
 use x11_dl::xlib::{self, Button4, Button5, Display};
 use xcb::{x, Xid, XidNew};
 
-use crate::GIO_PLATFORM;
+// use crate::GIO_PLATFORM;
 
 use super::utils::{get_key_from_keysym, get_mods, get_mouse_button};
 //TODO: Solve pub problems
@@ -31,7 +35,8 @@ impl WindowInterface {
 }
 
 pub struct Window {
-    window_interface: WindowInterface,
+    interface: WindowInterface,
+    input: Arc<Mutex<Input>>,
     screen: usize,
     atoms: Atoms,
     display: *mut Display,
@@ -39,10 +44,11 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn new() -> Self {
+    pub fn new(input: Arc<Mutex<Input>>) -> Self {
         Self {
-            window_interface: WindowInterface::new(),
+            interface: WindowInterface::new(),
             screen: 0,
+            input: input.clone(),
             atoms: unsafe {
                 Atoms {
                     wm_protocols: x::Atom::new(0),
@@ -58,11 +64,11 @@ impl Window {
     }
 
     pub fn platform_interface(&self) -> &WindowInterface {
-        &self.window_interface
+        &self.interface
     }
 
     pub fn platform_interface_mut(&mut self) -> &mut WindowInterface {
-        &mut self.window_interface
+        &mut self.interface
     }
 
     pub fn startup(
@@ -196,10 +202,6 @@ impl Window {
 
         //let mut maximized = false;
         self.platform_interface_mut().instance = Some(conn);
-        GIO_PLATFORM
-            .lock()
-            .unwrap()
-            .set_window_interface(Arc::new(*self.platform_interface()));
 
         Ok(())
     }
@@ -218,11 +220,15 @@ impl Window {
                             ))
                         };
                         let mods = get_mods(event.state());
-                        let mut input = GIO_INPUT.lock().unwrap();
-                        input
-                            .keyboard_mut()
-                            .set_press_state(key, true)
-                            .set_mods(mods);
+                        // let mut input = GIO_INPUT.lock().unwrap();
+                        {
+                            self.input
+                                .lock()
+                                .unwrap()
+                                .keyboard_mut()
+                                .set_press_state(key, true)
+                                .set_mods(mods);
+                        }
                     }
                     xcb::Event::X(x::Event::KeyRelease(event)) => {
                         let key = unsafe {
@@ -234,11 +240,16 @@ impl Window {
                             ))
                         };
                         let mods = get_mods(event.state());
-                        let mut input = GIO_INPUT.lock().unwrap();
-                        input
-                            .keyboard_mut()
-                            .set_press_state(key, false)
-                            .set_mods(mods);
+                        // let mut input = GIO_INPUT.lock().unwrap();
+
+                        {
+                            self.input
+                                .lock()
+                                .unwrap()
+                                .keyboard_mut()
+                                .set_press_state(key, false)
+                                .set_mods(mods);
+                        }
                         // for e in &self.input.borrow().keyboard.owners_released {
                         //     let item = event::InputEventItem {
                         //         owner: e.clone(),
@@ -286,11 +297,15 @@ impl Window {
                     }
                     xcb::Event::X(x::Event::ButtonPress(event)) => {
                         let button = get_mouse_button(event.detail() as u32);
-                        let mut input = GIO_INPUT.lock().unwrap();
-                        input
-                            .mouse_mut()
-                            .set_position(event.event_x() as u32, event.event_y() as u32)
-                            .set_press_state(button, true);
+                        // let mut input = GIO_INPUT.lock().unwrap();
+                        {
+                            self.input
+                                .lock()
+                                .unwrap()
+                                .mouse_mut()
+                                .set_position(event.event_x() as u32, event.event_y() as u32)
+                                .set_press_state(button, true);
+                        }
 
                         // self.input.mouse.buttons.pressed.set_event(
                         //     Event::MouseButtonPressedEvent {
@@ -321,11 +336,16 @@ impl Window {
                             } else {
                                 -1.0
                             };
-                            let mut input = GIO_INPUT.lock().unwrap();
-                            input
-                                .mouse_mut()
-                                .set_position(event.event_x() as u32, event.event_y() as u32)
-                                .set_scroll_delta(delta);
+                            // let mut input = GIO_INPUT.lock().unwrap();
+
+                            {
+                                self.input
+                                    .lock()
+                                    .unwrap()
+                                    .mouse_mut()
+                                    .set_position(event.event_x() as u32, event.event_y() as u32)
+                                    .set_scroll_delta(delta);
+                            }
                             // for e in &self.input.borrow().mouse.wheel {
                             //     let item = event::InputEventItem {
                             //         owner: e.clone(),
@@ -344,11 +364,15 @@ impl Window {
                                 -1.0
                             };
                             //TODO: this is horiontal mouse wheel movement
-                            let mut input = GIO_INPUT.lock().unwrap();
-                            input
-                                .mouse_mut()
-                                .set_position(event.event_x() as u32, event.event_y() as u32)
-                                .set_scroll_delta(delta);
+                            // let mut input = GIO_INPUT.lock().unwrap();
+                            {
+                                self.input
+                                    .lock()
+                                    .unwrap()
+                                    .mouse_mut()
+                                    .set_position(event.event_x() as u32, event.event_y() as u32)
+                                    .set_scroll_delta(delta);
+                            }
                             // for e in &self.input.borrow().mouse.wheel {
                             //     let item = event::InputEventItem {
                             //         owner: e.clone(),
@@ -360,11 +384,15 @@ impl Window {
                             //     };
                             // }
                         } else {
-                            let mut input = GIO_INPUT.lock().unwrap();
-                            input
-                                .mouse_mut()
-                                .set_position(event.event_x() as u32, event.event_y() as u32)
-                                .set_press_state(button, false);
+                            // let mut input = GIO_INPUT.lock().unwrap();
+                            {
+                                self.input
+                                    .lock()
+                                    .unwrap()
+                                    .mouse_mut()
+                                    .set_position(event.event_x() as u32, event.event_y() as u32)
+                                    .set_press_state(button, false);
+                            }
                             // self.input.mouse.buttons.released.set_event(
                             //     Event::MouseButtonReleasedEvent {
                             //         button,
@@ -388,10 +416,14 @@ impl Window {
                         }
                     }
                     xcb::Event::X(x::Event::MotionNotify(event)) => {
-                        let mut input = GIO_INPUT.lock().unwrap();
-                        input
-                            .mouse_mut()
-                            .set_position(event.event_x() as u32, event.event_y() as u32);
+                        // let mut input = GIO_INPUT.lock().unwrap();
+                        {
+                            self.input
+                                .lock()
+                                .unwrap()
+                                .mouse_mut()
+                                .set_position(event.event_x() as u32, event.event_y() as u32);
+                        }
                         // self.input.mouse.movement.set_event(Event::MouseMovedEvent {
                         //     x: event.event_x() as u16,
                         //     y: event.event_y() as u16,

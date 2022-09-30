@@ -1,11 +1,16 @@
 // pub mod input;
 
+use std::sync::{Arc, Mutex};
+
+use gio_input::Input;
+use window::Window;
+
 #[cfg(target_os = "linux")]
 mod linux;
 #[cfg(target_os = "linux")]
 pub mod window {
     pub type Window = super::linux::window::Window;
-    pub type WindowInterface = super::linux::window::WindowInterface;
+    //    pub type WindowInterface = super::linux::window::WindowInterface;
 }
 
 #[cfg(target_os = "windows")]
@@ -16,31 +21,20 @@ pub mod window {
     pub type WindowInterface = super::win32::window::WindowInterface;
 }
 
-use std::sync::{Arc, Mutex};
-
-use lazy_static::lazy_static;
-use window::WindowInterface;
-
 pub struct Platform {
-    window_interface: Arc<WindowInterface>,
+    input: Arc<Mutex<Input>>,
+    window: Arc<Mutex<Window>>,
 }
 
 impl Platform {
     pub fn new() -> Self {
+        use linux::window::Window;
+        let input = Arc::new(Mutex::new(Input::new()));
         Self {
-            window_interface: Arc::new(WindowInterface::new()),
+            input: input.clone(),
+            window: Arc::new(Mutex::new(Window::new(input))),
         }
     }
-    pub fn set_window_interface(&mut self, interface: Arc<WindowInterface>) {
-        self.window_interface = interface;
-    }
-    pub fn window_interface(&self) -> &Arc<WindowInterface> {
-        &self.window_interface
-    }
-}
-
-lazy_static! {
-    pub static ref GIO_PLATFORM: Arc<Mutex<Platform>> = Arc::new(Mutex::new(Platform::new()));
 }
 
 // #[cfg(test)]
