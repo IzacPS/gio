@@ -9,9 +9,10 @@ edition = "2021"
 
 [dependencies]
 log = "0.4.17"
+lazy_static = "1.4.0"
 env_logger = "0.9.0"
 gio_event = { path = "../gio_event" }
-gio_input = {path = "../gio_input"}
+gio_input = { path = "../gio_input" }
 
 
 [target.'cfg(target_os = "linux")'.dependencies]
