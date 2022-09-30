@@ -19,7 +19,7 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::VK_MENU;
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::VK_RWIN;
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::VK_SHIFT;
 
-use super::keymods;
+use crate::common::keymods;
 
 #[inline(always)]
 pub unsafe fn get_mods() -> usize {

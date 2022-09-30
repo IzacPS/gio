@@ -1,12 +1,10 @@
-use std::{cell::RefCell, rc::Rc};
-
 use gio_event::{dispatcher::EventDispatcher, event::Event};
 use windows_sys::{
     Win32::Foundation::*, Win32::System::LibraryLoader::*, Win32::UI::WindowsAndMessaging::*,
 };
 
 use super::{
-    input::{get_key, get_mouse_button, Input},
+    input::{get_key, get_mouse_button},
     utils::{get_mods, hiword, loword},
 };
 
@@ -27,17 +25,17 @@ impl WindowInterface {
 pub struct Window {
     //TODO: change windowhandle rc to arc and mutex
     window_interface: WindowInterface,
-    pub input: &'static Input,
-    pub event_dispatcher: &'static EventDispatcher<'static>,
+    //pub input: &'static Input,
+    //pub event_dispatcher: &'static EventDispatcher<'static>,
     pub has_requested_to_close: bool,
 }
 
 impl Window {
-    pub fn new(input: &'static Input, event_dispatcher: &'static EventDispatcher<'static>) -> Self {
+    pub fn new() -> Self {
         Self {
             window_interface: WindowInterface::new(),
-            input,
-            event_dispatcher,
+            //input,
+            //event_dispatcher,
             has_requested_to_close: false,
         }
     }
@@ -179,31 +177,17 @@ impl Window {
                     let key = get_key(wparam, lparam);
                     let mods = get_mods();
                     if (hiword(lparam as u64) as u32 & KF_REPEAT) == 0 {
-                        self.input
-                            .keyboard
-                            .pressed
-                            .set_event(Event::KeyPressedEvent { keycode: key, mods });
-                        self.event_dispatcher.push(&self.input.keyboard.pressed);
-                        // for e in &self.input.keyboard.pressed {
-                        //     let item = InputEventItem {
-                        //         owner: e.clone(),
-                        //         event_type: ,
-                        //     };
-                        //     self.event_system.borrow_mut().push_input_event(item);
-                        // }
+                        // self.input
+                        //     .keyboard
+                        //     .pressed
+                        //     .set_event(Event::KeyPressedEvent { keycode: key, mods });
+                        // self.event_dispatcher.push(&self.input.keyboard.pressed);
                     } else {
-                        self.input
-                            .keyboard
-                            .pressed
-                            .set_event(Event::KeyPressedRepeatingEvent { keycode: key, mods });
-                        self.event_dispatcher.push(&self.input.keyboard.pressed);
-                        // {
-                        //     let item = InputEventItem {
-                        //         owner: e.clone(),
-                        //         event_type: Event::KeyPressedRepeatingEvent { keycode: key, mods },
-                        //     };
-                        //     self.event_system.borrow_mut().push_input_event(item);
-                        // }
+                        // self.input
+                        //     .keyboard
+                        //     .pressed
+                        //     .set_event(Event::KeyPressedRepeatingEvent { keycode: key, mods });
+                        // self.event_dispatcher.push(&self.input.keyboard.pressed);
                     };
 
                     0
@@ -211,120 +195,75 @@ impl Window {
                 WM_KEYUP | WM_SYSKEYUP => {
                     //let mods = get_mods();
                     let key = get_key(wparam, lparam);
-                    self.input
-                        .keyboard
-                        .released
-                        .set_event(Event::KeyReleasedEvent { keycode: key });
-                    self.event_dispatcher.push(&self.input.keyboard.released);
-                    // for e in &self.input.borrow_mut().keyboard.owners_released {
-                    //     let item = InputEventItem {
-                    //         owner: e.clone(),
-                    //         event_type: Event::KeyReleasedEvent { keycode: key },
-                    //     };
-                    //     self.event_system.borrow_mut().push_input_event(item);
-                    // }
+                    // self.input
+                    //     .keyboard
+                    //     .released
+                    //     .set_event(Event::KeyReleasedEvent { keycode: key });
+                    // self.event_dispatcher.push(&self.input.keyboard.released);
+
                     0
                 }
                 WM_LBUTTONDOWN | WM_RBUTTONDOWN | WM_MBUTTONDOWN | WM_XBUTTONDOWN => {
                     let mbutton = get_mouse_button(message, wparam);
                     let mousex = loword(lparam as u64);
                     let mousey = hiword(lparam as u64);
-                    self.input
-                        .mouse
-                        .buttons
-                        .pressed
-                        .set_event(Event::MouseButtonPressedEvent {
-                            button: mbutton,
-                            x: mousex,
-                            y: mousey,
-                        });
-                    self.event_dispatcher
-                        .push(&self.input.mouse.buttons.pressed);
-                    // for e in &self.input.borrow_mut().mouse.buttons.owners_pressed {
-                    //     let item = InputEventItem {
-                    //         owner: e.clone(),
-                    //         event_type: Event::MouseButtonPressedEvent {
-                    //             button: mbutton,
-                    //             x: mousex,
-                    //             y: mousey,
-                    //         },
-                    //     };
-                    //     self.event_system.borrow_mut().push_input_event(item);
-                    // }
+                    // self.input
+                    //     .mouse
+                    //     .buttons
+                    //     .pressed
+                    //     .set_event(Event::MouseButtonPressedEvent {
+                    //         button: mbutton,
+                    //         x: mousex,
+                    //         y: mousey,
+                    //     });
+                    // self.event_dispatcher
+                    //     .push(&self.input.mouse.buttons.pressed);
+
                     0
                 }
                 WM_LBUTTONUP | WM_MBUTTONUP | WM_RBUTTONUP | WM_XBUTTONUP => {
                     let mbutton = get_mouse_button(message, wparam);
                     let mousex = loword(lparam as u64);
                     let mousey = hiword(lparam as u64);
-                    self.input
-                        .mouse
-                        .buttons
-                        .released
-                        .set_event(Event::MouseButtonReleasedEvent {
-                            button: mbutton,
-                            x: mousex,
-                            y: mousey,
-                        });
-                    self.event_dispatcher
-                        .push(&self.input.mouse.buttons.released);
-                    // for e in &self.input.borrow_mut().mouse.buttons.owners_released {
-                    //     let item = InputEventItem {
-                    //         owner: e.clone(),
-                    //         event_type: Event::MouseButtonReleasedEvent {
-                    //             button: mbutton,
-                    //             x: mousex,
-                    //             y: mousey,
-                    //         },
-                    //     };
-                    //     self.event_system.borrow_mut().push_input_event(item);
-                    // }
+                    // self.input
+                    //     .mouse
+                    //     .buttons
+                    //     .released
+                    //     .set_event(Event::MouseButtonReleasedEvent {
+                    //         button: mbutton,
+                    //         x: mousex,
+                    //         y: mousey,
+                    //     });
+                    // self.event_dispatcher
+                    //     .push(&self.input.mouse.buttons.released);
+
                     0
                 }
                 WM_MOUSEMOVE => {
                     let mousex = loword(lparam as u64);
                     let mousey = hiword(lparam as u64);
-                    self.input.mouse.movement.set_event(Event::MouseMovedEvent {
-                        x: mousex,
-                        y: mousey,
-                    });
-                    self.event_dispatcher.push(&self.input.mouse.movement);
-                    // for e in &self.input.borrow_mut().mouse.movement {
-                    //     let item = InputEventItem {
-                    //         owner: e.clone(),
-                    //         event_type: Event::MouseMovedEvent {
-                    //             x: mousex,
-                    //             y: mousey,
-                    //         },
-                    //     };
-                    //     self.event_system.borrow_mut().push_input_event(item);
-                    // }
+                    // self.input.mouse.movement.set_event(Event::MouseMovedEvent {
+                    //     x: mousex,
+                    //     y: mousey,
+                    // });
+                    // self.event_dispatcher.push(&self.input.mouse.movement);
+
                     0
                 }
                 WM_MOUSEWHEEL => {
                     let mousex = loword(lparam as u64);
                     let mousey = hiword(lparam as u64);
                     let delta = hiword(wparam as u64) as f64 / 120f64;
-                    self.input
-                        .mouse
-                        .wheel
-                        .set_event(Event::MouseWheelScrolledEvent {
-                            x: mousex,
-                            y: mousey,
-                            delta,
-                        });
-                    self.event_dispatcher.push(&self.input.mouse.wheel);
-                    // for e in &self.input.borrow_mut().mouse.wheel {
-                    //     let item = InputEventItem {
-                    //         owner: e.clone(),
-                    //         event_type: Event::MouseWheelScrolledEvent {
-                    //             x: mousex,
-                    //             y: mousey,
-                    //             delta,
-                    //         },
-                    //     };
-                    //     self.event_system.borrow_mut().push_input_event(item);
-                    // }
+                    // self.input
+                    //     .mouse
+                    //     .wheel
+                    //     .set_event(Event::MouseWheelScrolledEvent {
+                    //         x: mousex,
+                    //         y: mousey,
+                    //         delta,
+                    //     });
+                    // self.event_dispatcher.push(&self.input.mouse.wheel);
+
                     0
                 }
                 WM_MOUSEHWHEEL => {
@@ -332,26 +271,16 @@ impl Window {
                     let mousey = hiword(lparam as u64);
                     let mut delta = hiword(wparam as u64) as f64 / 120f64;
                     delta = -delta;
-                    self.input
-                        .mouse
-                        .wheel
-                        .set_event(Event::MouseWheelScrolledEvent {
-                            x: mousex,
-                            y: mousey,
-                            delta,
-                        });
-                    self.event_dispatcher.push(&self.input.mouse.wheel);
-                    // for e in &self.input.borrow_mut().mouse.wheel {
-                    //     let item = InputEventItem {
-                    //         owner: e.clone(),
-                    //         event_type: Event::MouseWheelScrolledEvent {
-                    //             x: mousex,
-                    //             y: mousey,
-                    //             delta,
-                    //         },
-                    //     };
-                    //     self.event_system.borrow_mut().push_input_event(item);
-                    // }
+                    // self.input
+                    //     .mouse
+                    //     .wheel
+                    //     .set_event(Event::MouseWheelScrolledEvent {
+                    //         x: mousex,
+                    //         y: mousey,
+                    //         delta,
+                    //     });
+                    // self.event_dispatcher.push(&self.input.mouse.wheel);
+
                     0
                 }
                 WM_SIZE => {

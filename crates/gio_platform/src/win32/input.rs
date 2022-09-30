@@ -9,7 +9,9 @@ use windows_sys::Win32::{
     },
 };
 
-use super::{keycode, mouse, utils::hiword};
+use crate::common::{keycode, mouse};
+
+use super::utils::hiword;
 
 pub fn get_key(key: WPARAM, flags: LPARAM) -> usize {
     match key as u16 {
